@@ -5,6 +5,29 @@ import { use } from "react";
 import { fetchNFTProvenance } from "@/services/SeiMCPService";
 import Link from "next/link";
 
+interface ProvenanceEvent {
+  event: string;
+  from: string | null;
+  to: string;
+  timestamp: string;
+  price: string | null;
+  marketplace: string | null;
+  txHash: string;
+}
+
+interface CurrentOwner {
+  address: string;
+  balance: string;
+  otherNFTs: { contract: string; tokenId: string }[];
+}
+
+interface NFTProvenanceData {
+  contract: string;
+  tokenId: string;
+  provenance: ProvenanceEvent[];
+  currentOwner: CurrentOwner;
+}
+
 interface NFTDetailsPageProps {
   params: Promise<{
     contract: string;
@@ -12,59 +35,32 @@ interface NFTDetailsPageProps {
   }>;
 }
 
-type NFTProvenanceData = {
-  currentOwner: {
-    address: string;
-    balance: string;
-    otherNFTs: { contract: string; tokenId: string }[];
-  };
-  provenance: {
-    event: string;
-    from: string | null;
-    to: string;
-    timestamp: string;
-    price: string | null;
-    marketplace: string | null;
-    txHash: string;
-  }[];
-};
-
 export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
   const { contract, tokenId } = use(params);
   const [provenanceData, setProvenanceData] = useState<NFTProvenanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setLoading(true);
+    fetchData()
+      .then(() => setLoading(false))
+      .catch(() => setLoading(false));
+  }, [contract, tokenId]);
+
   const fetchData = async () => {
     try {
       const data = await fetchNFTProvenance(contract, tokenId);
-      setProvenanceData(data);
-    } catch (err) {
-      console.error("Failed to fetch provenance data", err);
+      if (data) {
+        setProvenanceData(data);
+      } else {
+        setError("NFT not found");
+      }
+    } catch {
+      console.error("Fetch failed");
       setError("Failed to load NFT data");
     }
   };
-
-  useEffect(() => {
-    const loadProvenance = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchNFTProvenance(contract, tokenId);
-        if (data) {
-          setProvenanceData(data);
-        } else {
-          setError("NFT not found");
-        }
-      } catch (err) {
-        console.error("Failed to fetch provenance data", err);
-        setError("Failed to load NFT data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProvenance();
-  }, [contract, tokenId]);
 
   if (loading) {
     return (
@@ -84,10 +80,7 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <Link
-            href="/"
-            className="text-blue-500 hover:underline"
-          >
+          <Link href="/" className="text-blue-500 hover:underline">
             ← Back to Search
           </Link>
         </div>
@@ -100,10 +93,7 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link
-            href="/"
-            className="text-blue-500 hover:underline"
-          >
+          <Link href="/" className="text-blue-500 hover:underline">
             ← Back to Search
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
