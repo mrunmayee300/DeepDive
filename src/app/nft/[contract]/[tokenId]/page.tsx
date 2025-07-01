@@ -42,25 +42,25 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchNFTProvenance(contract, tokenId);
+        if (data) {
+          setProvenanceData(data);
+        } else {
+          setError("NFT not found");
+        }
+      } catch {
+        console.error("Fetch failed");
+        setError("Failed to load NFT data");
+      }
+    };
+
     setLoading(true);
     fetchData()
       .then(() => setLoading(false))
       .catch(() => setLoading(false));
   }, [contract, tokenId]);
-
-  const fetchData = async () => {
-    try {
-      const data = await fetchNFTProvenance(contract, tokenId);
-      if (data) {
-        setProvenanceData(data);
-      } else {
-        setError("NFT not found");
-      }
-    } catch {
-      console.error("Fetch failed");
-      setError("Failed to load NFT data");
-    }
-  };
 
   if (loading) {
     return (
