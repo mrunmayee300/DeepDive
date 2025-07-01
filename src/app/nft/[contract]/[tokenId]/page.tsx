@@ -12,30 +12,38 @@ interface NFTDetailsPageProps {
   }>;
 }
 
-type ProvenanceEvent = {
-  event: string;
-  from: string | null;
-  to: string;
-  timestamp: string;
-  price: string | null;
-  marketplace: string | null;
-  txHash: string;
-};
-
-type ProvenanceData = {
+type NFTProvenanceData = {
   currentOwner: {
     address: string;
     balance: string;
     otherNFTs: { contract: string; tokenId: string }[];
   };
-  provenance: ProvenanceEvent[];
+  provenance: {
+    event: string;
+    from: string | null;
+    to: string;
+    timestamp: string;
+    price: string | null;
+    marketplace: string | null;
+    txHash: string;
+  }[];
 };
 
 export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
   const { contract, tokenId } = use(params);
-  const [provenance, setProvenance] = useState<ProvenanceData | null>(null);
+  const [provenanceData, setProvenanceData] = useState<NFTProvenanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      const data = await fetchNFTProvenance(contract, tokenId);
+      setProvenanceData(data);
+    } catch (err) {
+      console.error("Failed to fetch provenance data", err);
+      setError("Failed to load NFT data");
+    }
+  };
 
   useEffect(() => {
     const loadProvenance = async () => {
@@ -43,11 +51,12 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
         setLoading(true);
         const data = await fetchNFTProvenance(contract, tokenId);
         if (data) {
-          setProvenance(data);
+          setProvenanceData(data);
         } else {
           setError("NFT not found");
         }
-      } catch {
+      } catch (err) {
+        console.error("Failed to fetch provenance data", err);
         setError("Failed to load NFT data");
       } finally {
         setLoading(false);
@@ -77,9 +86,9 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <Link
             href="/"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="text-blue-500 hover:underline"
           >
-            Back to Search
+            ← Back to Search
           </Link>
         </div>
       </div>
@@ -93,12 +102,9 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
+            className="text-blue-500 hover:underline"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Search
+            ← Back to Search
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             NFT Provenance
@@ -114,28 +120,28 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
         </div>
 
         {/* Current Owner */}
-        {provenance && (
+        {provenanceData && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Current Owner</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Address</p>
-                <p className="font-mono text-gray-900 dark:text-white">{provenance.currentOwner.address}</p>
+                <p className="font-mono text-gray-900 dark:text-white">{provenanceData.currentOwner.address}</p>
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Balance</p>
-                <p className="text-gray-900 dark:text-white">{provenance.currentOwner.balance}</p>
+                <p className="text-gray-900 dark:text-white">{provenanceData.currentOwner.balance}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Provenance Timeline */}
-        {provenance && (
+        {provenanceData && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Transfer History</h2>
             <div className="space-y-4">
-              {provenance.provenance.map((event, index) => (
+              {provenanceData.provenance.map((event, index) => (
                 <div
                   key={index}
                   className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
