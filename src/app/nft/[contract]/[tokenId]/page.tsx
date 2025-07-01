@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { use } from 'react';
 import { fetchNFTProvenance } from '@/services/SeiMCPService';
+import Link from 'next/link';
 
 interface NFTDetailsPageProps {
   params: Promise<{
@@ -13,7 +14,22 @@ interface NFTDetailsPageProps {
 
 export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
   const { contract, tokenId } = use(params);
-  const [provenance, setProvenance] = useState<any>(null);
+  const [provenance, setProvenance] = useState<{
+    currentOwner: {
+      address: string;
+      balance: string;
+      otherNFTs: { contract: string; tokenId: string }[];
+    };
+    provenance: {
+      event: string;
+      from: string | null;
+      to: string;
+      timestamp: string;
+      price: string | null;
+      marketplace: string | null;
+      txHash: string;
+    }[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +43,7 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
         } else {
           setError('NFT not found');
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load NFT data');
       } finally {
         setLoading(false);
@@ -55,12 +71,12 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <a 
+          <Link 
             href="/" 
             className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Back to Search
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -71,7 +87,7 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <a 
+          <Link 
             href="/" 
             className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
           >
@@ -79,7 +95,7 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Search
-          </a>
+          </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             NFT Provenance
           </h1>
@@ -90,73 +106,77 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
         </div>
 
         {/* Current Owner */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Current Owner</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-gray-600 dark:text-gray-400">Address</p>
-              <p className="font-mono text-gray-900 dark:text-white">{provenance.currentOwner.address}</p>
-            </div>
-            <div>
-              <p className="text-gray-600 dark:text-gray-400">Balance</p>
-              <p className="text-gray-900 dark:text-white">{provenance.currentOwner.balance}</p>
+        {provenance && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Current Owner</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400">Address</p>
+                <p className="font-mono text-gray-900 dark:text-white">{provenance.currentOwner.address}</p>
+              </div>
+              <div>
+                <p className="text-gray-600 dark:text-gray-400">Balance</p>
+                <p className="text-gray-900 dark:text-white">{provenance.currentOwner.balance}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Provenance Timeline */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Transfer History</h2>
-          <div className="space-y-4">
-            {provenance.provenance.map((event: any, index: number) => (
-              <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                    {index + 1}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white capitalize">
-                      {event.event}
-                    </h3>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(event.timestamp).toLocaleDateString()}
+        {provenance && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Transfer History</h2>
+            <div className="space-y-4">
+              {provenance.provenance.map((event, index: number) => (
+                <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                      {index + 1}
                     </span>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">From</p>
-                      <p className="font-mono text-gray-900 dark:text-white">
-                        {event.from || 'N/A (Mint)'}
-                      </p>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white capitalize">
+                        {event.event}
+                      </h3>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(event.timestamp).toLocaleDateString()}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">To</p>
-                      <p className="font-mono text-gray-900 dark:text-white">{event.to}</p>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">From</p>
+                        <p className="font-mono text-gray-900 dark:text-white">
+                          {event.from || 'N/A (Mint)'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">To</p>
+                        <p className="font-mono text-gray-900 dark:text-white">{event.to}</p>
+                      </div>
+                      {event.price && (
+                        <div>
+                          <p className="text-gray-600 dark:text-gray-400">Price</p>
+                          <p className="text-gray-900 dark:text-white">{event.price} SEI</p>
+                        </div>
+                      )}
+                      {event.marketplace && (
+                        <div>
+                          <p className="text-gray-600 dark:text-gray-400">Marketplace</p>
+                          <p className="text-gray-900 dark:text-white">{event.marketplace}</p>
+                        </div>
+                      )}
                     </div>
-                    {event.price && (
-                      <div>
-                        <p className="text-gray-600 dark:text-gray-400">Price</p>
-                        <p className="text-gray-900 dark:text-white">{event.price} SEI</p>
-                      </div>
-                    )}
-                    {event.marketplace && (
-                      <div>
-                        <p className="text-gray-600 dark:text-gray-400">Marketplace</p>
-                        <p className="text-gray-900 dark:text-white">{event.marketplace}</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <p className="text-gray-600 dark:text-gray-400">Transaction</p>
-                    <p className="font-mono text-sm text-gray-900 dark:text-white">{event.txHash}</p>
+                    <div className="mt-2">
+                      <p className="text-gray-600 dark:text-gray-400">Transaction</p>
+                      <p className="font-mono text-sm text-gray-900 dark:text-white">{event.txHash}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div className="mt-8 flex gap-4">
