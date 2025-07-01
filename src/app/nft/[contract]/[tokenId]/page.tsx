@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { use } from 'react';
-import { fetchNFTProvenance } from '@/services/SeiMCPService';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { use } from "react";
+import { fetchNFTProvenance } from "@/services/SeiMCPService";
+import Link from "next/link";
 
 interface NFTDetailsPageProps {
   params: Promise<{
@@ -12,24 +12,28 @@ interface NFTDetailsPageProps {
   }>;
 }
 
+type ProvenanceEvent = {
+  event: string;
+  from: string | null;
+  to: string;
+  timestamp: string;
+  price: string | null;
+  marketplace: string | null;
+  txHash: string;
+};
+
+type ProvenanceData = {
+  currentOwner: {
+    address: string;
+    balance: string;
+    otherNFTs: { contract: string; tokenId: string }[];
+  };
+  provenance: ProvenanceEvent[];
+};
+
 export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
   const { contract, tokenId } = use(params);
-  const [provenance, setProvenance] = useState<{
-    currentOwner: {
-      address: string;
-      balance: string;
-      otherNFTs: { contract: string; tokenId: string }[];
-    };
-    provenance: {
-      event: string;
-      from: string | null;
-      to: string;
-      timestamp: string;
-      price: string | null;
-      marketplace: string | null;
-      txHash: string;
-    }[];
-  } | null>(null);
+  const [provenance, setProvenance] = useState<ProvenanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,10 +45,10 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
         if (data) {
           setProvenance(data);
         } else {
-          setError('NFT not found');
+          setError("NFT not found");
         }
       } catch {
-        setError('Failed to load NFT data');
+        setError("Failed to load NFT data");
       } finally {
         setLoading(false);
       }
@@ -71,8 +75,8 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Back to Search
@@ -87,8 +91,8 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,8 +104,12 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
             NFT Provenance
           </h1>
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <span>Contract: <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{contract}</code></span>
-            <span>Token ID: <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{tokenId}</code></span>
+            <span>
+              Contract: <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{contract}</code>
+            </span>
+            <span>
+              Token ID: <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{tokenId}</code>
+            </span>
           </div>
         </div>
 
@@ -127,8 +135,11 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Transfer History</h2>
             <div className="space-y-4">
-              {provenance.provenance.map((event, index: number) => (
-                <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+              {provenance.provenance.map((event, index) => (
+                <div
+                  key={index}
+                  className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                >
                   <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                     <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                       {index + 1}
@@ -147,7 +158,7 @@ export default function NFTDetailsPage({ params }: NFTDetailsPageProps) {
                       <div>
                         <p className="text-gray-600 dark:text-gray-400">From</p>
                         <p className="font-mono text-gray-900 dark:text-white">
-                          {event.from || 'N/A (Mint)'}
+                          {event.from || "N/A (Mint)"}
                         </p>
                       </div>
                       <div>
