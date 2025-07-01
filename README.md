@@ -1,4 +1,4 @@
-# Sei NFT Explorer
+# DeepDive
 
 A web app to track the complete provenance and ownership history of any NFT on the Sei blockchain.
 
