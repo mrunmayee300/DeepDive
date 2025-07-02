@@ -1,29 +1,48 @@
-import { mockProvenance, mockRareNFT, mockGamingNFT, mockNewNFT } from '../utils/mockProvenance';
+import axios from "axios";
 
-export async function fetchNFTProvenance(contract: string, tokenId: string) {
-  // TODO: Replace with real API call to Sei MCP Kit or NFTScan
-  // For now, return mock data based on contract/tokenId combinations
-  
-  // Example 1: Basic NFT
-  if (contract === mockProvenance.contract && tokenId === mockProvenance.tokenId) {
-    return mockProvenance;
+export interface ProvenanceEvent {
+  owner: string;
+  timestamp: string;
+  price: string;
+  marketplace: string;
+}
+
+export interface CurrentOwner {
+  owner: string;
+  balance: string;
+  otherNFTs: string[];
+}
+
+export interface NFTProvenanceData {
+  contractAddress: string;
+  tokenId: string;
+  provenance: ProvenanceEvent[];
+  currentOwner: CurrentOwner;
+}
+
+export const getNFTProvenance = async (contract: string, tokenId: string): Promise<NFTProvenanceData> => {
+  const MCP_SERVER_URL = process.env.NEXT_PUBLIC_MCP_SERVER_URL || "https://sei-mcp-server-production.up.railway.app/";
+
+  try {
+    const response = await axios.get(`${MCP_SERVER_URL}/nft/provenance`, {
+      params: {
+        contractAddress: contract,
+        tokenId: tokenId,
+      },
+    });
+
+    return {
+      contractAddress: contract,
+      tokenId: tokenId,
+      provenance: response.data.provenance || [],
+      currentOwner: response.data.currentOwner || {
+        owner: "Unknown",
+        balance: "0 SEI",
+        otherNFTs: [],
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching provenance data:", error);
+    throw error;
   }
-  
-  // Example 2: Rare NFT with high-value transfers
-  if (contract === mockRareNFT.contract && tokenId === mockRareNFT.tokenId) {
-    return mockRareNFT;
-  }
-  
-  // Example 3: Gaming NFT with frequent transfers
-  if (contract === mockGamingNFT.contract && tokenId === mockGamingNFT.tokenId) {
-    return mockGamingNFT;
-  }
-  
-  // Example 4: Newly minted NFT
-  if (contract === mockNewNFT.contract && tokenId === mockNewNFT.tokenId) {
-    return mockNewNFT;
-  }
-  
-  // Simulate not found
-  return null;
-} 
+};
